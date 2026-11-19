@@ -1,21 +1,53 @@
-# Kubernetes
+# Kubernetes – Grundlagen und Praxis
 
-**Empfohlene Dauer:** 4 Tage
+**Seminardauer:** 3 Tage, 12 Unterrichtseinheiten à 90 Minuten  
+**Branch:** `training`
 
-**Voraussetzungen:** Grundlegende IT-Kenntnisse; Programmiererfahrung ist je nach Thema hilfreich.
+Dieses Repository enthält die Ressourcen für das Standardtraining **Kubernetes – Grundlagen und Praxis**. Die Teilnehmenden lernen, containerisierte Anwendungen in Kubernetes bereitzustellen, zu verwalten und zu betreiben.
 
-### Abstract
+## Trainingsumgebung
 
-Dieses Training vermittelt die Grundlagen und praktischen Einsatzmöglichkeiten von Kubernetes. Die Teilnehmenden lernen zentrale Begriffe, typische Anwendungsfälle und die wichtigsten technischen Zusammenhänge kennen. Darauf aufbauend werden die wesentlichen Funktionen und Arbeitsabläufe anhand verständlicher Beispiele vorgestellt. Praktische Übungen ermöglichen es, die vorgestellten Konzepte selbst auszuprobieren und deren Nutzen für reale Projekte einzuschätzen. Besondere Aufmerksamkeit gilt der Auswahl geeigneter Werkzeuge, der nachvollziehbaren Gestaltung von Lösungen und dem Erkennen häufiger Fehlerquellen. Ergänzend werden Aspekte der Qualität, Wartbarkeit und Zusammenarbeit behandelt. Am Ende können die Teilnehmenden typische Aufgabenstellungen einordnen, passende Lösungsansätze entwickeln und das Gelernte eigenständig in ihrem beruflichen Umfeld anwenden.
+Das Seminar findet in einer vorbereiteten virtuellen Umgebung mit einem funktionsfähigen Kubernetes-Cluster statt. Eine Clusterinstallation ist nicht Teil des Trainings.
 
----
+- **Rancher:** grafische Verwaltung und Untersuchung von Clustern, Workloads und Kubernetes-Ressourcen
+- **kubectl:** Arbeit mit Kubernetes-Ressourcen über die Kommandozeile
+- **Helm:** Installation und Verwaltung paketierter Kubernetes-Anwendungen
+- **Podman und Ansible:** ergänzende Werkzeuge für den Einstieg in Container und Automatisierung
 
-# Kubernetes
+Die konkrete Cluster-Topologie, Softwareversionen und Zugangswege werden vor der Durchführung festgelegt. Zugangsdaten werden nicht im Repository gespeichert.
 
-**Recommended Duration:** 4 days
+Eine ausführlichere Beschreibung mit Einstiegsschritten steht in [training-environment/README.md](training-environment/README.md).
 
-**Prerequisites:** Basic IT knowledge; programming experience is helpful depending on the topic.
+## Aufbau der Unterrichtseinheiten
 
-### Abstract
+Jede der zwölf Unterrichtseinheiten besitzt ein eigenes Verzeichnis unter [Resources](Resources/). Der Verzeichnisname beginnt mit der Blocknummer und bezeichnet das Thema.
 
-This training introduces the fundamentals and practical applications of Kubernetes. Participants explore essential terminology, typical use cases, and the most important technical relationships. Building on this foundation, key features and workflows are explained through clear examples. Hands-on exercises allow participants to try the concepts themselves and evaluate their relevance to real-world projects. Special attention is paid to selecting suitable tools, designing understandable solutions, and recognizing common sources of errors. The course also addresses quality, maintainability, and collaboration in professional environments. By the end of the training, participants will be able to assess typical tasks, identify appropriate solutions, and apply the acquired knowledge independently in their own work.
+- `README.md`: Lerngegenstand, Beschreibung der Beispiele, Vorgehen und Hinweise
+- `src/`: Quellcode, Shell-Skripte, Kubernetes-YAML-Manifeste und weitere Konfigurationen
+
+Die Dateien sind ein **Ausgangsgerüst** für die weitere Entwicklung des Trainerleitfadens, des Handouts und der Übungen. Sie stellen noch keinen vollständig getesteten Übungssatz dar.
+
+## Unterrichtseinheiten
+
+1. [Container-Grundlagen und Automatisierung](Resources/01-container-grundlagen/)
+2. [Kubernetes-Architektur und Konzepte](Resources/02-architektur/)
+3. [Kubernetes-Werkzeuge und Ressourcen](Resources/03-kubectl-yaml/)
+4. [Pods und Container in Kubernetes](Resources/04-pods/)
+5. [Deployments und Anwendungen bereitstellen](Resources/05-deployments/)
+6. [Netzwerk und Services](Resources/06-netzwerk-services/)
+7. [Konfiguration und persistente Speicherung](Resources/07-konfiguration-speicherung/)
+8. [Anwendungen aktualisieren und skalieren](Resources/08-updates-skalierung/)
+9. [Ressourcenverwaltung, Scheduling und Verfügbarkeit](Resources/09-scheduling/)
+10. [Helm und Automatisierung](Resources/10-helm/)
+11. [Diagnose, Debugging und Monitoring](Resources/11-diagnose-monitoring/)
+12. [Kubernetes-Sicherheit und betriebliche Anforderungen](Resources/12-sicherheit/)
+
+## Erste Schritte
+
+```bash
+kubectl config current-context
+kubectl cluster-info
+kubectl get nodes
+```
+
+Anschließend Rancher öffnen und den verbundenen Cluster prüfen. Die Beispiele werden blockweise aus den jeweiligen `src/`-Verzeichnissen ausgeführt. Vor Änderungen am Cluster stets Kontext und Namespace kontrollieren.
