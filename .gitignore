@@ -1,0 +1,3 @@
+# Lokaler Arbeitsbereich der Teilnehmenden
+/participant/*
+!/participant/README.md
