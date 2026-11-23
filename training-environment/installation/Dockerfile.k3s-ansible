@@ -1,0 +1,14 @@
+FROM ubuntu:24.04
+ARG K3S_VERSION=v1.33.6+k3s1
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates curl openssh-server sudo python3 iptables iproute2 procps \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -s /bin/bash ansible \
+    && echo 'ansible ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-ansible \
+    && chmod 0440 /etc/sudoers.d/90-ansible \
+    && mkdir -p /run/sshd /etc/training \
+    && curl -fL "https://github.com/k3s-io/k3s/releases/download/${K3S_VERSION}/k3s" -o /usr/local/bin/k3s \
+    && chmod +x /usr/local/bin/k3s
+COPY k3s-entrypoint.sh /usr/local/bin/k3s-entrypoint.sh
+RUN chmod +x /usr/local/bin/k3s-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/k3s-entrypoint.sh"]

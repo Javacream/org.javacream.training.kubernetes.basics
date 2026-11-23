@@ -1,0 +1,87 @@
+services:
+  rancher:
+    image: rancher/rancher:stable
+    container_name: rancher
+    privileged: true
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      CATTLE_BOOTSTRAP_PASSWORD: javacream
+    volumes:
+      - rancher-data:/var/lib/rancher
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [training]
+
+  k3s-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.k3s-ansible
+    image: training/k3s-ansible:local
+    container_name: k3s-server
+    hostname: k3s-server
+    privileged: true
+    restart: unless-stopped
+    command: ["server", "--node-name", "k3s-server", "--tls-san", "${HOST_IP:?Run setup.sh first}", "--tls-san", "k3s-server", "--write-kubeconfig-mode", "0644"]
+    environment:
+      K3S_TOKEN: "${K3S_TOKEN:?Run setup.sh first}"
+    ports:
+      - "6443:6443"
+      - "80:80"
+      - "443:443"
+      - "30080:30080"
+      - "127.0.0.1:2201:22"
+    volumes:
+      - k3s-server-data:/var/lib/rancher/k3s
+      - ./generated/ansible.pub:/etc/training/ansible.pub:ro
+    tmpfs: [/run, /tmp]
+    networks: [training]
+
+  k3s-agent-1:
+    image: training/k3s-ansible:local
+    container_name: k3s-agent-1
+    hostname: k3s-agent-1
+    privileged: true
+    restart: unless-stopped
+    depends_on: [k3s-server]
+    command: ["agent", "--node-name", "k3s-agent-1"]
+    environment:
+      K3S_URL: https://k3s-server:6443
+      K3S_TOKEN: "${K3S_TOKEN:?Run setup.sh first}"
+    ports:
+      - "127.0.0.1:2202:22"
+    volumes:
+      - k3s-agent-1-data:/var/lib/rancher/k3s
+      - ./generated/ansible.pub:/etc/training/ansible.pub:ro
+    tmpfs: [/run, /tmp]
+    networks: [training]
+
+  k3s-agent-2:
+    image: training/k3s-ansible:local
+    container_name: k3s-agent-2
+    hostname: k3s-agent-2
+    privileged: true
+    restart: unless-stopped
+    depends_on: [k3s-server]
+    command: ["agent", "--node-name", "k3s-agent-2"]
+    environment:
+      K3S_URL: https://k3s-server:6443
+      K3S_TOKEN: "${K3S_TOKEN:?Run setup.sh first}"
+    ports:
+      - "127.0.0.1:2203:22"
+    volumes:
+      - k3s-agent-2-data:/var/lib/rancher/k3s
+      - ./generated/ansible.pub:/etc/training/ansible.pub:ro
+    tmpfs: [/run, /tmp]
+    networks: [training]
+
+networks:
+  training:
+
+volumes:
+  rancher-data:
+  k3s-server-data:
+  k3s-agent-1-data:
+  k3s-agent-2-data:

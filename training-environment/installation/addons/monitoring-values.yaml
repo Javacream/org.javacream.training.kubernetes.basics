@@ -1,0 +1,33 @@
+# Resource-conscious demo stack for a single-host training VM.
+grafana:
+  adminPassword: training-grafana
+  service:
+    type: ClusterIP
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+prometheus:
+  prometheusSpec:
+    retention: 6h
+    resources:
+      requests:
+        cpu: 100m
+        memory: 384Mi
+    storageSpec: {}
+alertmanager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+
+# Nested K3s nodes cannot provide the host mount propagation required by node-exporter.
+nodeExporter:
+  enabled: false
+prometheus-node-exporter:
+  enabled: false

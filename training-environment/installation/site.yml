@@ -1,0 +1,195 @@
+---
+- name: Compose-basierte Thales-Trainingsumgebung
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: false
+  vars:
+    installation_dir: "{{ playbook_dir }}"
+    host_ip: "{{ lookup('env', 'HOST_IP') | mandatory }}"
+    training_user: "{{ lookup('env', 'TRAINING_USER') | mandatory }}"
+    training_home: "{{ lookup('env', 'TRAINING_HOME') | mandatory }}"
+    training_group: "{{ lookup('pipe', 'id -gn ' ~ training_user) }}"
+  tasks:
+    - name: Basiswerkzeuge installieren
+      ansible.builtin.apt:
+        name: [curl, ca-certificates, podman, buildah, skopeo, openssh-client, python3, python3-requests]
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Docker-Dienst starten
+      ansible.builtin.systemd_service:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Docker prüfen
+      ansible.builtin.command: docker version
+      changed_when: false
+
+    - name: Docker Compose prüfen
+      ansible.builtin.command: docker compose version
+      changed_when: false
+
+    - name: Trainingsbenutzer für Docker freischalten
+      ansible.builtin.user:
+        name: "{{ training_user }}"
+        groups: docker
+        append: true
+
+    - name: SSH-Verzeichnis für Trainingsbenutzer anlegen
+      ansible.builtin.file:
+        path: "{{ training_home }}/.ssh"
+        state: directory
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0700"
+
+    - name: SSH-Schlüssel für Node-Zugriff erzeugen bzw. beibehalten
+      community.crypto.openssh_keypair:
+        path: "{{ training_home }}/.ssh/k3s_training"
+        type: ed25519
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0600"
+
+    - name: Verzeichnis für generierte Dateien anlegen
+      ansible.builtin.file:
+        path: "{{ installation_dir }}/generated"
+        state: directory
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0700"
+
+    - name: Öffentlichen SSH-Schlüssel für Container bereitstellen
+      ansible.builtin.copy:
+        src: "{{ training_home }}/.ssh/k3s_training.pub"
+        dest: "{{ installation_dir }}/generated/ansible.pub"
+        remote_src: true
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0644"
+      register: authorized_key
+
+    - name: Cluster-Token prüfen
+      ansible.builtin.stat:
+        path: "{{ installation_dir }}/.env"
+      register: env_file
+
+    - name: Zufälligen K3s-Token für neue Installation erzeugen
+      ansible.builtin.copy:
+        dest: "{{ installation_dir }}/.env"
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0600"
+        content: |
+          HOST_IP={{ host_ip }}
+          K3S_TOKEN={{ lookup('password', '/dev/null length=48 chars=ascii_letters,digits') }}
+      when: not env_file.stat.exists
+      no_log: true
+
+    - name: Host-IP in bestehender Compose-Konfiguration aktualisieren
+      ansible.builtin.lineinfile:
+        path: "{{ installation_dir }}/.env"
+        regexp: '^HOST_IP='
+        line: "HOST_IP={{ host_ip }}"
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0600"
+      no_log: true
+
+    - name: Docker Compose Images bauen
+      ansible.builtin.command: docker compose build
+      args:
+        chdir: "{{ installation_dir }}"
+      changed_when: true
+
+    - name: Rancher und drei K3s-Nodes starten
+      ansible.builtin.command: docker compose up -d
+      args:
+        chdir: "{{ installation_dir }}"
+      changed_when: true
+
+    - name: SSH-Server bei neuem Schlüssel mit aktualisiertem Key starten
+      ansible.builtin.command: docker compose restart k3s-server k3s-agent-1 k3s-agent-2
+      args:
+        chdir: "{{ installation_dir }}"
+      when: authorized_key.changed
+      changed_when: true
+
+    - name: kubectl aus dem K3s-Container auf den Host kopieren
+      ansible.builtin.command: docker cp k3s-server:/usr/local/bin/k3s /usr/local/bin/kubectl
+      changed_when: true
+
+    - name: kubectl ausführbar machen
+      ansible.builtin.file:
+        path: /usr/local/bin/kubectl
+        mode: "0755"
+
+    - name: K3s-API und Kubeconfig abwarten
+      ansible.builtin.command: docker exec k3s-server cat /etc/rancher/k3s/k3s.yaml
+      register: kubeconfig
+      retries: 36
+      delay: 10
+      until: kubeconfig.rc == 0
+      changed_when: false
+
+    - name: Kubeconfig für Ubuntu-Host schreiben
+      ansible.builtin.copy:
+        dest: "{{ installation_dir }}/generated/kubeconfig.yaml"
+        content: "{{ kubeconfig.stdout | regex_replace('https://127\\.0\\.0\\.1:6443', 'https://' ~ host_ip ~ ':6443') }}\n"
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0600"
+      no_log: true
+
+    - name: Verzeichnis für Standard-Kubeconfig anlegen
+      ansible.builtin.file:
+        path: "{{ training_home }}/.kube"
+        state: directory
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0700"
+
+    - name: Standard-Kubeconfig für Trainingsbenutzer bereitstellen
+      ansible.builtin.copy:
+        src: "{{ installation_dir }}/generated/kubeconfig.yaml"
+        dest: "{{ training_home }}/.kube/config"
+        remote_src: true
+        owner: "{{ training_user }}"
+        group: "{{ training_group }}"
+        mode: "0600"
+
+    - name: Auf alle drei Kubernetes-Nodes warten
+      ansible.builtin.command: kubectl --kubeconfig {{ installation_dir }}/generated/kubeconfig.yaml get nodes --no-headers
+      register: nodes
+      retries: 36
+      delay: 10
+      until: nodes.rc == 0 and (nodes.stdout_lines | length) == 3 and (nodes.stdout_lines | select('search', ' Ready ') | list | length) == 3
+      changed_when: false
+
+    - name: Node-Status anzeigen
+      ansible.builtin.debug:
+        var: nodes.stdout_lines
+
+    - name: SSH-Portverbindungen abwarten
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ item }}"
+        timeout: 90
+      loop: [2201, 2202, 2203]
+
+    - name: SSH-Zugriff und sudo als Trainingsbenutzer testen
+      ansible.builtin.command: ansible kubernetes -m command -a 'id -u' -b
+      args:
+        chdir: "{{ installation_dir }}"
+      become_user: "{{ training_user }}"
+      environment:
+        HOME: "{{ training_home }}"
+      register: ansible_test
+      changed_when: false
+
+    - name: Ansible-Test anzeigen
+      ansible.builtin.debug:
+        var: ansible_test.stdout_lines
