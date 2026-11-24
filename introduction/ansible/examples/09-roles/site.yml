@@ -1,0 +1,7 @@
+---
+- name: Webserver konfigurieren
+  hosts: all
+  become: true
+
+  roles:
+    - webserver

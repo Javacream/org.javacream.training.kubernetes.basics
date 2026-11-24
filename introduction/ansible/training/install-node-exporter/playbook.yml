@@ -1,0 +1,37 @@
+---
+- name: Node Exporter auf den Kubernetes-Workern installieren
+  hosts: k3s-agent-1:k3s-agent-2
+  become: true
+
+  tasks:
+    - name: Node Exporter installieren
+      ansible.builtin.apt:
+        name: prometheus-node-exporter
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+        policy_rc_d: 101
+
+    - name: Prüfen, ob Node Exporter bereits läuft
+      ansible.builtin.command: pgrep -f '^/usr/bin/prometheus-node-exporter( |$)'
+      register: exporter_process
+      changed_when: false
+      failed_when: exporter_process.rc not in [0, 1]
+
+    - name: Node Exporter ohne systemd starten
+      ansible.builtin.shell: |
+        nohup /usr/bin/prometheus-node-exporter --web.listen-address=0.0.0.0:9100 --collector.disable-defaults --collector.cpu --collector.meminfo --collector.loadavg --collector.uname </dev/null >/var/log/node-exporter.log 2>&1 &
+      when: exporter_process.rc == 1
+
+    - name: Metrik-Endpunkt überprüfen
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9100/metrics
+        status_code: 200
+      register: metrics
+      until: metrics.status | default(0) == 200
+      retries: 10
+      delay: 1
+
+    - name: URL des Metrik-Endpunkts ausgeben
+      ansible.builtin.debug:
+        msg: "http://{{ ansible_facts['default_ipv4']['address'] }}:9100/metrics"

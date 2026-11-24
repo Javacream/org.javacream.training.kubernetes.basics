@@ -1,0 +1,6 @@
+---
+- name: Webserver
+  hosts: all
+
+- name: Datenbankserver
+  hosts: all

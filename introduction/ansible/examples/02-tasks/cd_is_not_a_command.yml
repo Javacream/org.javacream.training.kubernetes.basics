@@ -1,0 +1,8 @@
+---
+- name: cd mit dem command-Modul ausführen
+  hosts: all
+
+  tasks:
+    - name: Verzeichnis wechseln
+      ansible.builtin.command:
+        cmd: cd ..

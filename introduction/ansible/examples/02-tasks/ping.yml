@@ -1,0 +1,7 @@
+---
+- name: Verbindung zu all prüfen
+  hosts: all
+
+  tasks:
+    - name: Verbindung testen
+      ansible.builtin.ping:

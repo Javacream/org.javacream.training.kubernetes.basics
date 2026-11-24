@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: worker-node-exporters
+  namespace: monitoring
+  labels:
+    release: training-monitoring
+spec:
+  scrapeInterval: 15s
+  metricsPath: /metrics
+  staticConfigs:
+    - targets:
+        - "172.18.0.4:9100"
+      labels:
+        worker: k3s-agent-1
+    - targets:
+        - "172.18.0.5:9100"
+      labels:
+        worker: k3s-agent-2

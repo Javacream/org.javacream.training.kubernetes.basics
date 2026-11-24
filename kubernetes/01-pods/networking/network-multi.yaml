@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: network-multi
+  labels:
+    app: network-multi
+spec:
+  containers:
+    - name: nginx
+      image: nginx:stable
+      command: ["/bin/sh", "-c"]
+      args:
+        - "printf '%s\n' '<h1>Antwort von Pod A (network-multi)</h1>' > /usr/share/nginx/html/index.html; exec nginx -g 'daemon off;'"
+      ports:
+        - containerPort: 80
+    - name: toolbox
+      image: alpine:3.21
+      command: ["/bin/sh", "-c"]
+      args:
+        - "apk add --no-cache curl netcat-openbsd && exec sleep infinity"

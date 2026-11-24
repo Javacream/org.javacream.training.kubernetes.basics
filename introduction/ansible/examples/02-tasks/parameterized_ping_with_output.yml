@@ -1,0 +1,13 @@
+---
+- name: Verbindung zu db1 prüfen
+  hosts: all
+
+  tasks:
+    - name: Verbindung mit eigener Antwort testen
+      ansible.builtin.ping:
+        data: hallo
+      register: result
+
+    - name: Aktuelles Verzeichnis ausgeben
+      ansible.builtin.debug:
+        var: result
