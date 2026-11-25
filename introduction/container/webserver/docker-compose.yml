@@ -1,0 +1,7 @@
+services:
+  nginx:
+    image: nginx:stable
+    ports:
+      - "9090:80"
+    volumes:
+      - ./content:/usr/share/nginx/html:ro
