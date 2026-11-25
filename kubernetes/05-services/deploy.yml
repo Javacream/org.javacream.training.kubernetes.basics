@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
       - name: hello-ctr
-        image: nigelpoulton/k8sbook:1.0
+        image: javacream/hostinfo:1.0-lb
         ports:
-        - containerPort: 8080
+        - containerPort: 80
+

@@ -4,31 +4,18 @@ metadata:
   name: tkb-sts
 spec:
   replicas: 3
+  serviceName: dullahan
   selector:
     matchLabels:
       app: web
-  serviceName: "dullahan"
   template:
     metadata:
       labels:
         app: web
     spec:
-      terminationGracePeriodSeconds: 10
       containers:
-      - name: ctr-web
-        image: nginx:latest
+      - name: web
+        image: javacream/hostinfo:1.0-lb
         ports:
         - containerPort: 80
           name: web
-        volumeMounts:
-        - name: webroot
-          mountPath: /usr/share/nginx/html
-  volumeClaimTemplates:
-  - metadata:
-      name: webroot
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "block"
-      resources:
-        requests:
-          storage: 1Gi

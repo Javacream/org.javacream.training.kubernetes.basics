@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver
+  namespace: development
+spec:
+  containers:
+    - name: nginx
+      image: nginx:stable
+      command: ["/bin/sh", "-c"]
+      args:
+        - "printf '%s\\n' '<h1>development</h1><p>Version 2.0</p>' > /usr/share/nginx/html/index.html; exec nginx -g 'daemon off;'"
+      ports:
+        - containerPort: 80
+    - name: toolbox
+      image: alpine:3.21
+      command: ["/bin/sh", "-c"]
+      args:
+        - "apk add --no-cache curl && exec sleep infinity"

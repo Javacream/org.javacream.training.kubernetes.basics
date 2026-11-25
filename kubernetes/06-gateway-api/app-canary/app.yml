@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: current
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: badge-lions
@@ -38,7 +38,7 @@ kind: Deployment
 metadata:
   name: previous
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: badge-ship

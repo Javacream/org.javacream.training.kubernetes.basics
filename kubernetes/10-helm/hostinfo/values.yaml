@@ -1,0 +1,10 @@
+replicaCount: 3
+image:
+  repository: javacream/hostinfo
+  tag: 1.0-lb
+service:
+  type: LoadBalancer
+  port: 9000
+  targetPort: 80
+
+demoRevision: "1"
