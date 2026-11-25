@@ -1,0 +1,6 @@
+services:
+  hostinfo:
+    build: .
+    image: javacream/hostinfo:1.0-lb
+    ports:
+      - "9090:80"
