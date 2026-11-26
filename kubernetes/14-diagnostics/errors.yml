@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: diag-image
+  labels:
+    app: diag-demo
+spec:
+  containers:
+  - name: web
+    image: nginx:training-nonexistent-tag-987654321
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: diag-crash
+  labels:
+    app: diag-demo
+spec:
+  containers:
+  - name: crash
+    image: busybox:1.36
+    command: ["sh", "-c", "echo 'Demo: Start fehlgeschlagen'; exit 1"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: diag-oom
+  labels:
+    app: diag-demo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: memory
+    image: python:3.12-alpine
+    command: ["python", "-c", "x = bytearray(128 * 1024 * 1024); print(len(x))"]
+    resources:
+      limits:
+        memory: 32Mi
+        cpu: 200m

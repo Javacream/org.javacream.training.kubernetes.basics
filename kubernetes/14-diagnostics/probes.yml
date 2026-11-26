@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: diag-probes
+  labels:
+    app: diag-probes
+spec:
+  containers:
+  - name: web
+    image: nginx:stable
+    ports:
+    - containerPort: 80
+    startupProbe:
+      httpGet:
+        path: /
+        port: 80
+      periodSeconds: 2
+      failureThreshold: 30
+    readinessProbe:
+      httpGet:
+        path: /ready.html
+        port: 80
+      periodSeconds: 2
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 80
+      periodSeconds: 5
+      failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: diag-probes
+spec:
+  selector:
+    app: diag-probes
+  ports:
+  - port: 80
+    targetPort: 80

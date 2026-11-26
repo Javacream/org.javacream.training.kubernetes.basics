@@ -64,7 +64,7 @@ unverändert.
 -   Einfach umzusetzen
 -   Standardverfahren in Kubernetes
 -   Geringer Ressourcenbedarf
--   Automatisches Rollback möglich
+-   Manuelles Rollback über kubectl rollout undo möglich
 
 ### Nachteile
 
